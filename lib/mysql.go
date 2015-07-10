@@ -2,6 +2,7 @@ package lib
 
 import (
 	"database/sql"
+	"encoding/json"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"strconv"
@@ -12,6 +13,11 @@ import (
 type Tips struct {
 	db     *sql.DB
 	sended map[int]int64
+}
+
+type mess struct {
+	Id   int64  `json:"id"`
+	Mess string `json:"mess"`
 }
 
 func (tp *Tips) NewTips(connstr string) error {
@@ -41,7 +47,19 @@ func (tp *Tips) GetHotMessage() string {
 	}
 	if num > 0 {
 		returnstr := "欢迎回来，当前有 X 单提现申请等待处理！"
-		return strings.Replace(returnstr, "X", strconv.Itoa(num), 1)
+		returnstr = strings.Replace(returnstr, "X", strconv.Itoa(num), 1)
+		messnew := &mess{Id: lstime, Mess: returnstr}
+		return_json, err := json.Marshal(messnew)
+		if err != nil {
+			log.Println("err:", err)
+		}
+		// log.Println(return_json)
+		if err == nil {
+			return string(return_json)
+		} else {
+			return ""
+		}
+
 	} else {
 		return ""
 	}
@@ -103,17 +121,27 @@ func (tp *Tips) GetMessage() string {
 
 		}
 	}
-
+	var returnstr string
 	switch {
 	case newcom > 1:
 		s := strconv.Itoa(newcom)
-		returnstr := "有 X 单提现申请等待处理！"
-		return strings.Replace(returnstr, "X", s, 1)
+		returnstr = "有 X 单提现申请等待处理！"
+		returnstr = strings.Replace(returnstr, "X", s, 1)
 	case newcom == 1:
-		returnstr := "N 有新的提现申请！"
+		returnstr = "N 有新的提现申请！"
 		returnstr = strings.Replace(returnstr, "N", lastusername, 1)
-		return returnstr
 	default:
+		return ""
+	}
+	rmsg := &mess{Id: now, Mess: returnstr}
+	return_json, err := json.Marshal(rmsg)
+	if err != nil {
+		log.Println("err:", err)
+	}
+	// log.Println(return_json)
+	if err == nil {
+		return string(return_json)
+	} else {
 		return ""
 	}
 
