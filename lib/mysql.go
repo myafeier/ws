@@ -24,7 +24,6 @@ func (tp *Tips) NewTips(connstr string) error {
 	tp.db.SetMaxOpenConns(5)
 
 	err = tp.db.Ping()
-	log.Printf("%#v", tp)
 	if err != nil {
 		return err
 	}
