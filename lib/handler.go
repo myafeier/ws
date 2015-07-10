@@ -16,13 +16,13 @@ type Connection struct {
 func (c *Connection) writer() {
 	defer func() {
 		c.ws.Close()
-		// log.Println("writer close")
+		log.Println("writer close")
 	}()
 	for {
 		message := <-c.send
 		err := c.ws.WriteMessage(websocket.TextMessage, message)
 		if err != nil {
-			log.Println(err)
+			log.Println("s:", err, "msg:", message)
 			break
 		}
 	}
@@ -38,15 +38,13 @@ func (c *Connection) writer() {
 func (c *Connection) reader() {
 	defer func() {
 		c.ws.Close()
-		// log.Println("reader close")
+		log.Println("reader close")
 	}()
 	timer := time.NewTicker(10 * time.Second)
 	for {
 		<-timer.C
-		_, _, err := c.ws.ReadMessage()
-		if err != nil {
-			break
-		}
+		//_, _, err := c.ws.ReadMessage()
+		//
 		//c.h.Broadcast <- message
 	}
 }
