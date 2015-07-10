@@ -64,11 +64,12 @@ func main() {
 	db := new(lib.Tips)
 	err := db.NewTips(conf.Mysql.Connstr)
 
-	http.HandleFunc("/index", homeHandler)
+	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/test", testHandler)
 	h := lib.NewHub()
 	go h.Run()
 	go h.Productmessage(db)
+	go h.ProductHotMessage(db)
 
 	http.Handle("/ws", lib.WsHandler{H: h})
 	log.Println("Server is opening")

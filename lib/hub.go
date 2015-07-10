@@ -6,19 +6,23 @@ import (
 )
 
 type Hub struct {
-	Connections map[*Connection]bool
-	Broadcast   chan []byte
-	Register    chan *Connection
-	Unregister  chan *Connection
+	Connections  map[*Connection]bool
+	Hotconns     map[*Connection]bool
+	HotBroadcast chan []byte
+	Broadcast    chan []byte
+	Register     chan *Connection
+	Unregister   chan *Connection
 }
 
 func NewHub() *Hub {
 
 	return &Hub{
-		Broadcast:   make(chan []byte),
-		Register:    make(chan *Connection),
-		Unregister:  make(chan *Connection),
-		Connections: make(map[*Connection]bool),
+		Broadcast:    make(chan []byte),
+		Hotconns:     make(map[*Connection]bool),
+		HotBroadcast: make(chan []byte),
+		Register:     make(chan *Connection),
+		Unregister:   make(chan *Connection),
+		Connections:  make(map[*Connection]bool),
 	}
 
 }
@@ -28,6 +32,7 @@ func (h *Hub) Run() {
 		select {
 		case c := <-h.Register:
 			h.Connections[c] = true
+			h.Hotconns[c] = true
 		case c := <-h.Unregister:
 			if _, ok := h.Connections[c]; ok {
 				delete(h.Connections, c)
@@ -45,6 +50,11 @@ func (h *Hub) Run() {
 					close(c.send)
 				}
 			}
+		case hm := <-h.HotBroadcast:
+			for c := range h.Hotconns {
+				c.send <- hm
+				delete(h.Hotconns, c)
+			}
 		}
 	}
 }
@@ -54,8 +64,23 @@ func (h *Hub) Productmessage(w *Tips) {
 	for {
 		<-timer.C
 		m := w.GetMessage()
-		h.Broadcast <- []byte(m)
-
+		if m != "" {
+			h.Broadcast <- []byte(m)
+		}
 	}
 
+}
+
+func (h *Hub) ProductHotMessage(w *Tips) {
+	timer := time.NewTicker(1 * time.Second)
+	for {
+		<-timer.C
+		if len(h.Hotconns) > 0 {
+			m := w.GetHotMessage()
+			if m != "" {
+				h.HotBroadcast <- []byte(m)
+			}
+
+		}
+	}
 }

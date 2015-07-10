@@ -31,9 +31,24 @@ func (tp *Tips) NewTips(connstr string) error {
 	return err
 }
 
+func (tp *Tips) GetHotMessage() string {
+	lstime := time.Now().Unix() - 24*3600
+	var num int
+	err := tp.db.QueryRow("select count(1) as num from rd_account_cash where status=0 and addtime>?", lstime).Scan(&num)
+	// defer db.Close()
+	if err != nil {
+		log.Println("sql query error:", err)
+		return ""
+	}
+	if num > 0 {
+		returnstr := "欢迎回来，当前有 X 单提现申请等待处理！"
+		return strings.Replace(returnstr, "X", strconv.Itoa(num), 1)
+	} else {
+		return ""
+	}
+}
 func (tp *Tips) GetMessage() string {
-	log.Printf("%#v", tp)
-	rows, err := tp.db.Query("select a.id,a.addtime,b.username from rd_account_cash as a left join rd_user as b on a.user_id=b.user_id order by a.id desc limit 10")
+	rows, err := tp.db.Query("select a.id,a.addtime,b.username from rd_account_cash as a left join rd_user as b on a.user_id=b.user_id where a.status=0 order by a.id desc limit 10")
 	defer rows.Close()
 	if err != nil {
 		log.Println("sql_query error:", err)
@@ -93,10 +108,10 @@ func (tp *Tips) GetMessage() string {
 	switch {
 	case newcom > 1:
 		s := strconv.Itoa(newcom)
-		returnstr := "有X单提现申请等待处理！"
+		returnstr := "有 X 单提现申请等待处理！"
 		return strings.Replace(returnstr, "X", s, 1)
 	case newcom == 1:
-		returnstr := "客户：N有新的提现申请！"
+		returnstr := "N 有新的提现申请！"
 		returnstr = strings.Replace(returnstr, "N", lastusername, 1)
 		return returnstr
 	default:
