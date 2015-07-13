@@ -37,7 +37,7 @@ func (tp *Tips) NewTips(connstr string) error {
 }
 
 func (tp *Tips) GetHotMessage() string {
-	lstime := time.Now().Unix() - 24*3600
+	lstime := 20150713
 	var num int
 	err := tp.db.QueryRow("select count(1) as num from rd_account_cash where status=0 and addtime>?", lstime).Scan(&num)
 	// defer db.Close()
